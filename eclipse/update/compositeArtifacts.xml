@@ -11,6 +11,6 @@
     <child location='http://basti1302.github.com/startexplorer/update/'/>
     <child location='http://download.gna.org/eclox/update'/>
     <child location='http://eclipse-color-theme.github.com/update'/>
-    <child location='http://mercurialeclipse.eclipselabs.org.codespot.com/hg.wiki/update_site/stable'>
+    <child location='http://mercurialeclipse.eclipselabs.org.codespot.com/hg.wiki/update_site/stable'/>
   </children>
 </repository>
