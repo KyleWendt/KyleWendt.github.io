@@ -1,0 +1,148 @@
+diff -crB --new-file wigxjpf-1.2-old/Makefile wigxjpf-1.2-new/Makefile
+*** wigxjpf-1.2-old/Makefile	2015-08-25 13:30:31.000000000 +0200
+--- wigxjpf-1.2-new/Makefile	2015-09-15 14:03:35.000000000 +0200
+***************
+*** 1,11 ****
+  
+  QUIET ?= @
+  
+  all: lib/libwigxjpf.a bin/wigxjpf
+  
+  fpsimple: lib/libfpsimplexj.a
+  
+! shared: lib/libwigxjpf_shared.so
+  
+  AR = ar
+  RLIB = ranlib
+--- 1,19 ----
+  
+  QUIET ?= @
+  
++ UNAME_S := $(shell uname -s)
++ ifeq ($(UNAME_S),Linux)
++     EXT = so
++ endif
++ ifeq ($(UNAME_S),Darwin)
++     EXT = dylib
++ endif
++ 
+  all: lib/libwigxjpf.a bin/wigxjpf
+  
+  fpsimple: lib/libfpsimplexj.a
+  
+! shared: lib/libwigxjpf.$(EXT)
+  
+  AR = ar
+  RLIB = ranlib
+***************
+*** 95,105 ****
+  	$(QUIET)$(AR) $(ARFLAGS) $@ $(FPSIMPLE_OBJECTS)
+  	$(QUIET)$(RLIB) $@
+  
+! lib/libwigxjpf_shared.so: lib/libwigxjpf.a
+  	@echo "  LINK   $@"
+  	$(QUIET)mkdir -p $(dir $@)
+  	$(QUIET)$(CC) -shared -Wl,-whole-archive $< -Wl,-no-whole-archive -o $@
+  
+  bin/wigxjpf: obj/wigxjpf.o lib/libwigxjpf.a
+  	@echo "  LINK   $@"
+  	$(QUIET)mkdir -p $(dir $@)
+--- 103,118 ----
+  	$(QUIET)$(AR) $(ARFLAGS) $@ $(FPSIMPLE_OBJECTS)
+  	$(QUIET)$(RLIB) $@
+  
+! lib/libwigxjpf.so: lib/libwigxjpf.a
+  	@echo "  LINK   $@"
+  	$(QUIET)mkdir -p $(dir $@)
+  	$(QUIET)$(CC) -shared -Wl,-whole-archive $< -Wl,-no-whole-archive -o $@
+  
++ lib/libwigxjpf.dylib: lib/libwigxjpf.a
++ 	@echo "  LINK   $@"
++ 	$(QUIET)mkdir -p $(dir $@)
++ 	$(QUIET)$(CC) -dynamiclib -Wl,-force_load $< -o $@
++ 
+  bin/wigxjpf: obj/wigxjpf.o lib/libwigxjpf.a
+  	@echo "  LINK   $@"
+  	$(QUIET)mkdir -p $(dir $@)
+diff -crB --new-file wigxjpf-1.2-old/pywigxjpf/__init__.py wigxjpf-1.2-new/pywigxjpf/__init__.py
+*** wigxjpf-1.2-old/pywigxjpf/__init__.py	1970-01-01 01:00:00.000000000 +0100
+--- wigxjpf-1.2-new/pywigxjpf/__init__.py	2015-09-15 14:37:01.000000000 +0200
+***************
+*** 0 ****
+--- 1 ----
++ from pywigxjpf import wig_table_init, wig_temp_init, wig_temp_free, wig_table_free, wig3jj, wig6jj, wig9jj
+diff -crB --new-file wigxjpf-1.2-old/pywigxjpf/pywigxjpf.py wigxjpf-1.2-new/pywigxjpf/pywigxjpf.py
+*** wigxjpf-1.2-old/pywigxjpf/pywigxjpf.py	2015-04-26 23:14:51.000000000 +0200
+--- wigxjpf-1.2-new/pywigxjpf/pywigxjpf.py	2015-09-15 14:36:56.000000000 +0200
+***************
+*** 45,52 ****
+  import os
+  
+  # Load the library as _libwigxjpf.
+! _path = os.path.join(os.path.dirname(__file__))+'/../lib'
+! _libwigxjpf = nm.ctypeslib.load_library('libwigxjpf_shared', _path)
+  
+  # Define argument and result types
+  _libwigxjpf.wig_table_init.argtypes = [ct.c_int]*2
+--- 45,52 ----
+  import os
+  
+  # Load the library as _libwigxjpf.
+! _path = os.path.join(os.path.dirname(__file__), '../lib')
+! _libwigxjpf = nm.ctypeslib.load_library('libwigxjpf', _path)
+  
+  # Define argument and result types
+  _libwigxjpf.wig_table_init.argtypes = [ct.c_int]*2
+***************
+*** 66,72 ****
+  _libwigxjpf.wig9jj.restype = ct.c_double
+  
+  
+! def wig_table_init(max_two_j,wigner_type):
+      """Setup of precalculated tables of prime-factorised factorials.
+     The tables must be large enough to handle the largest symbol that
+     shall be evaluated.  For multi-threaded programs, this is done once
+--- 66,72 ----
+  _libwigxjpf.wig9jj.restype = ct.c_double
+  
+  
+! def wig_table_init(max_two_j,wigner_type=9):
+      """Setup of precalculated tables of prime-factorised factorials.
+     The tables must be large enough to handle the largest symbol that
+     shall be evaluated.  For multi-threaded programs, this is done once
+***************
+*** 206,212 ****
+      print 'WIGXJPF python test facility'
+  
+      # Initialize
+!     wig_table_init(2*100)
+      wig_temp_init(2*100)
+  
+      # Note that arguments are in two_j = 2*j.
+--- 206,212 ----
+      print 'WIGXJPF python test facility'
+  
+      # Initialize
+!     wig_table_init(2*100, 9)
+      wig_temp_init(2*100)
+  
+      # Note that arguments are in two_j = 2*j.
+diff -crB --new-file wigxjpf-1.2-old/setup.py wigxjpf-1.2-new/setup.py
+*** wigxjpf-1.2-old/setup.py	1970-01-01 01:00:00.000000000 +0100
+--- wigxjpf-1.2-new/setup.py	2015-09-15 14:45:06.000000000 +0200
+***************
+*** 0 ****
+--- 1,12 ----
++ #!/usr/bin/env python
++ 
++ from setuptools import setup, find_packages
++ 
++ setup(name='pywigxjpf',
++       version='1.2',
++       description='Wigner Symbols',
++       author='C. Forssen',
++       url='http://fy.chalmers.se/subatom/wigxjpf',
++       packages=['pywigxjpf'],
++       package_data={'pywigxjpf': ['../lib/libwigxjpf.*']}
++      )
+\ No newline at end of file
